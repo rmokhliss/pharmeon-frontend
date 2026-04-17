@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { getAdminToken } from "@/lib/admin-auth";
+import Logo from "@/components/Logo";
 
 const mainLinks = [
   { href: "/dashboard",    label: "Accueil",    icon: "🏠" },
@@ -57,7 +58,7 @@ export default function NavBar() {
     <>
       {/* Desktop top bar */}
       <div className="hidden sm:flex bg-slate-800 border-b border-slate-700 px-6 py-3 items-center gap-2">
-        <Link href="/" className="text-white font-bold text-lg mr-6">Pharmeon</Link>
+        <Link href="/" className="flex items-center gap-2 mr-6"><Logo size={24} /><span className="text-white font-bold text-lg">Pharmeon</span></Link>
         {allLinks.map((l) => (
           <Link key={l.href} href={l.href}
             className={`flex items-center gap-1 text-sm font-medium px-3 py-1.5 rounded-lg transition-colors ${
@@ -72,7 +73,7 @@ export default function NavBar() {
 
       {/* Mobile top brand */}
       <div className="sm:hidden bg-slate-800 border-b border-slate-700 px-4 py-3 flex items-center">
-        <Link href="/" className="text-white font-bold text-lg">Pharmeon</Link>
+        <Link href="/" className="flex items-center gap-2"><Logo size={22} /><span className="text-white font-bold text-lg">Pharmeon</span></Link>
       </div>
 
       {/* Mobile "Plus" overlay menu */}

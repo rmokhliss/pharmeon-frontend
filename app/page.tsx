@@ -1,17 +1,20 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
+import Logo from "@/components/Logo";
 
 type RegisterForm = {
+  categorie: "CLIENT" | "FOURNISSEUR";
   nom: string;
   type: string;
   ville: string;
   telephone: string;
   email: string;
+  contact: string;
   message: string;
 };
 
-const emptyForm: RegisterForm = { nom: "", type: "PHARMACIE", ville: "", telephone: "", email: "", message: "" };
+const emptyForm: RegisterForm = { categorie: "CLIENT", nom: "", type: "PHARMACIE", ville: "", telephone: "", email: "", contact: "", message: "" };
 
 export default function HomePage() {
   const [form, setForm] = useState<RegisterForm>(emptyForm);
@@ -25,7 +28,7 @@ export default function HomePage() {
     setStatus("loading");
     setErrorMsg("");
     try {
-      const res = await fetch("/api/clients/register", {
+      const res = await fetch("/api/demandes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -46,7 +49,10 @@ export default function HomePage() {
     <div className="min-h-screen bg-slate-900 text-white">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-slate-900/90 backdrop-blur border-b border-slate-800 px-6 py-4 flex items-center justify-between">
-        <span className="text-xl font-bold text-white">Pharmeon</span>
+        <div className="flex items-center gap-2">
+          <Logo size={32} />
+          <span className="text-xl font-bold text-white">Pharmeon</span>
+        </div>
         <div className="flex items-center gap-3">
           <Link href="/portail"
             className="text-sm text-slate-300 hover:text-white transition-colors px-3 py-1.5 rounded-lg hover:bg-slate-800">
@@ -108,36 +114,55 @@ export default function HomePage() {
       <section id="demande" className="px-6 py-16 max-w-xl mx-auto">
         <div className="text-center mb-8">
           <h2 className="text-2xl font-bold text-white">Demande d'accès</h2>
-          <p className="text-slate-400 text-sm mt-2">Vous êtes pharmacie ou parapharmacie ? Rejoignez notre réseau de distribution.</p>
+          <p className="text-slate-400 text-sm mt-2">Rejoignez notre réseau — client ou fournisseur.</p>
         </div>
 
         {status === "success" ? (
           <div className="bg-emerald-900/40 border border-emerald-700 rounded-2xl p-6 text-center">
             <div className="text-3xl mb-3">✅</div>
             <p className="text-emerald-300 font-semibold">Demande envoyée !</p>
-            <p className="text-slate-400 text-sm mt-2">Nous étudierons votre demande et vous contacterons dans les plus brefs délais.</p>
+            <p className="text-slate-400 text-sm mt-2">Notre équipe examinera votre demande et vous contactera sous 24h.</p>
             <button onClick={() => setStatus("idle")} className="mt-4 text-sm text-slate-400 hover:text-white underline">
-              Envoyer une autre demande
+              Nouvelle demande
             </button>
           </div>
         ) : (
           <form onSubmit={handleRegister} className="bg-slate-800 border border-slate-700 rounded-2xl p-6 flex flex-col gap-4">
+            {/* Category toggle */}
+            <div className="grid grid-cols-2 gap-2 p-1 bg-slate-900 rounded-xl">
+              {(["CLIENT", "FOURNISSEUR"] as const).map((cat) => (
+                <button key={cat} type="button" onClick={() => { set("categorie", cat); set("type", cat === "CLIENT" ? "PHARMACIE" : "FOURNISSEUR"); }}
+                  className={`py-2 rounded-lg text-sm font-medium transition-colors ${form.categorie === cat ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-white"}`}>
+                  {cat === "CLIENT" ? "🛒 Client" : "🏭 Fournisseur"}
+                </button>
+              ))}
+            </div>
+
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs text-slate-400 mb-1">Nom de l'établissement *</label>
+                <label className="block text-xs text-slate-400 mb-1">{form.categorie === "CLIENT" ? "Nom établissement" : "Nom société"} *</label>
                 <input required value={form.nom} onChange={(e) => set("nom", e.target.value)}
-                  placeholder="Pharmacie du Centre"
+                  placeholder={form.categorie === "CLIENT" ? "Pharmacie du Centre" : "Labo Distribution SA"}
                   className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500" />
               </div>
-              <div>
-                <label className="block text-xs text-slate-400 mb-1">Type *</label>
-                <select required value={form.type} onChange={(e) => set("type", e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
-                  <option value="PHARMACIE">Pharmacie</option>
-                  <option value="PARA">Parapharmacie</option>
-                  <option value="PARTICULIER">Autre</option>
-                </select>
-              </div>
+              {form.categorie === "CLIENT" ? (
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">Type *</label>
+                  <select required value={form.type} onChange={(e) => set("type", e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
+                    <option value="PHARMACIE">Pharmacie</option>
+                    <option value="PARA">Parapharmacie</option>
+                    <option value="PARTICULIER">Autre</option>
+                  </select>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">Contact *</label>
+                  <input required value={form.contact} onChange={(e) => set("contact", e.target.value)}
+                    placeholder="Nom du responsable"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500" />
+                </div>
+              )}
             </div>
             <div className="grid sm:grid-cols-2 gap-4">
               <div>

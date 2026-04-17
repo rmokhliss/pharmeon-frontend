@@ -2,7 +2,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getAdminToken } from "@/lib/admin-auth";
+import { getAdminToken, clearAdminSession } from "@/lib/admin-auth";
+import Logo from "@/components/Logo";
 
 const API = "/api";
 
@@ -54,11 +55,20 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-900 text-white pb-20 sm:pb-6">
-      <div className="px-6 py-5 border-b border-slate-700">
-        <h1 className="text-white font-semibold">Tableau de bord</h1>
-        <p className="text-slate-400 text-xs mt-0.5">
-          {new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}
-        </p>
+      <div className="px-6 py-5 border-b border-slate-700 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Logo size={28} />
+          <div>
+            <h1 className="text-white font-semibold">Tableau de bord</h1>
+            <p className="text-slate-400 text-xs">
+              {new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}
+            </p>
+          </div>
+        </div>
+        <button onClick={() => { clearAdminSession(); router.push("/"); }}
+          className="text-xs text-slate-500 hover:text-slate-300 transition-colors">
+          Déconnexion
+        </button>
       </div>
 
       <div className="px-6 py-5 space-y-6">

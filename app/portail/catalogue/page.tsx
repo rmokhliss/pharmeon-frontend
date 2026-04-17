@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getPortailUser, portailFetch, clearPortailSession } from "@/lib/portail-auth";
+import Logo from "@/components/Logo";
 
 type Product = { id: number; nom: string; reference: string; marque: string; categorie: string; prix_vente: number; unite: string; stock: number; description?: string };
 type CartItem = { product: Product; quantite: number };
@@ -60,7 +61,7 @@ export default function CataloguePage() {
     finally { setSending(false); }
   };
 
-  const logout = () => { clearPortailSession(); router.push("/portail"); };
+  const logout = () => { clearPortailSession(); router.push("/"); };
 
   if (!user) return null;
 
@@ -68,9 +69,12 @@ export default function CataloguePage() {
     <div className="min-h-screen bg-slate-900 text-white pb-24">
       {/* Header */}
       <div className="bg-slate-800 border-b border-slate-700 px-4 py-3 flex items-center justify-between">
-        <div>
-          <p className="text-white font-semibold text-sm">Pharmeon</p>
-          <p className="text-slate-400 text-xs">Bonjour, {user.nom}</p>
+        <div className="flex items-center gap-2">
+          <Logo size={24} />
+          <div>
+            <p className="text-white font-semibold text-sm">Pharmeon</p>
+            <p className="text-slate-400 text-xs">Bonjour, {user.nom}</p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => router.push("/portail/commandes")}
