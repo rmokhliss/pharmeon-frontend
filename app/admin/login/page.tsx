@@ -1,11 +1,13 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { portailFetch, savePortailSession } from "@/lib/portail-auth";
+import { saveAdminSession } from "@/lib/admin-auth";
 
-export default function PortailLoginPage() {
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+
+export default function AdminLoginPage() {
   const router = useRouter();
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm] = useState({ username: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -15,12 +17,15 @@ export default function PortailLoginPage() {
     e.preventDefault();
     setError(""); setLoading(true);
     try {
-      const data = await portailFetch<{ token: string; client: any }>("/auth/login", {
+      const res = await fetch(`${API}/auth/admin/login`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      savePortailSession(data.token, data.client);
-      router.push("/portail/catalogue");
+      if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.message || "Identifiants invalides"); }
+      const data = await res.json();
+      saveAdminSession(data.token);
+      router.push("/dashboard");
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -33,14 +38,14 @@ export default function PortailLoginPage() {
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-white">Pharmeon</h1>
-          <p className="text-slate-400 text-sm mt-1">Espace client</p>
+          <p className="text-slate-400 text-sm mt-1">Espace administration</p>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-slate-800 border border-slate-700 rounded-2xl p-6 flex flex-col gap-4">
           <div>
-            <label className="block text-xs text-slate-400 mb-1">Identifiant</label>
-            <input type="text" required value={form.email} onChange={(e) => set("email", e.target.value)}
-              placeholder="email ou identifiant"
+            <label className="block text-xs text-slate-400 mb-1">Utilisateur</label>
+            <input type="text" required value={form.username} onChange={(e) => set("username", e.target.value)}
+              placeholder="admin"
               className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500" />
           </div>
           <div>
@@ -53,7 +58,7 @@ export default function PortailLoginPage() {
           {error && <p className="text-red-400 text-xs text-center">{error}</p>}
 
           <button type="submit" disabled={loading}
-            className="py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold disabled:opacity-50 transition-colors">
+            className="py-3 rounded-lg bg-slate-600 hover:bg-slate-500 text-white text-sm font-semibold disabled:opacity-50 transition-colors">
             {loading ? "Connexion..." : "Se connecter"}
           </button>
         </form>

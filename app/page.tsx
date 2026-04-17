@@ -21,7 +21,7 @@ export default function HomePage() {
           <span className="ml-auto text-indigo-300 text-xl">→</span>
         </Link>
 
-        <Link href="/dashboard"
+        <Link href="/admin/login"
           className="group bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 transition-colors rounded-2xl p-6 flex items-center gap-5">
           <div className="w-14 h-14 rounded-xl bg-slate-700 flex items-center justify-center text-3xl shrink-0">
             ⚙️

@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { getAdminToken } from "@/lib/admin-auth";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
@@ -12,9 +14,12 @@ type Stats = {
 };
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [stats, setStats] = useState<Stats | null>(null);
 
   useEffect(() => {
+    if (!getAdminToken()) { router.replace("/admin/login"); return; }
+
     Promise.all([
       fetch(`${API}/products`).then((r) => r.json()),
       fetch(`${API}/stock`).then((r) => r.json()),
