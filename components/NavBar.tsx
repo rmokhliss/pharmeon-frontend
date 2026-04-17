@@ -1,26 +1,35 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 
-const links = [
-  { href: "/dashboard",    label: "Accueil",      icon: "🏠",  mobile: true  },
-  { href: "/products",     label: "Produits",     icon: "📦",  mobile: true  },
-  { href: "/stock/in",     label: "Entrée",       icon: "▲",   mobile: true  },
-  { href: "/stock/out",    label: "Sortie",       icon: "▼",   mobile: true  },
-  { href: "/stock/log",    label: "Opérations",   icon: "📋",  mobile: true  },
-  { href: "/clients",      label: "Clients",      icon: "👥",  mobile: false },
-  { href: "/fournisseurs", label: "Fournisseurs", icon: "🏭",  mobile: false },
+const mainLinks = [
+  { href: "/dashboard",    label: "Accueil",    icon: "🏠" },
+  { href: "/products",     label: "Produits",   icon: "📦" },
+  { href: "/stock/in",     label: "Entrée",     icon: "▲"  },
+  { href: "/stock/out",    label: "Sortie",     icon: "▼"  },
 ];
+
+const moreLinks = [
+  { href: "/stock/log",    label: "Opérations",   icon: "📋" },
+  { href: "/clients",      label: "Clients",      icon: "👥" },
+  { href: "/fournisseurs", label: "Fournisseurs", icon: "🏭" },
+];
+
+const allLinks = [...mainLinks, ...moreLinks];
 
 export default function NavBar() {
   const path = usePathname();
+  const [moreOpen, setMoreOpen] = useState(false);
+
+  const moreActive = moreLinks.some((l) => path.startsWith(l.href));
 
   return (
     <>
       {/* Desktop top bar */}
       <div className="hidden sm:flex bg-slate-800 border-b border-slate-700 px-6 py-3 items-center gap-2">
         <span className="text-white font-bold text-lg mr-6">Pharmeon</span>
-        {links.map((l) => (
+        {allLinks.map((l) => (
           <Link key={l.href} href={l.href}
             className={`flex items-center gap-2 text-sm font-medium px-3 py-1.5 rounded-lg transition-colors ${
               path.startsWith(l.href)
@@ -37,10 +46,30 @@ export default function NavBar() {
         <span className="text-white font-bold text-lg">Pharmeon</span>
       </div>
 
-      {/* Mobile bottom tab bar — 5 primary tabs only */}
+      {/* Mobile "Plus" overlay menu */}
+      {moreOpen && (
+        <div className="sm:hidden fixed inset-0 z-40" onClick={() => setMoreOpen(false)}>
+          <div className="absolute bottom-16 left-0 right-0 bg-slate-800 border-t border-slate-700 px-4 py-3 flex flex-col gap-1"
+            onClick={(e) => e.stopPropagation()}>
+            {moreLinks.map((l) => (
+              <Link key={l.href} href={l.href} onClick={() => setMoreOpen(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
+                  path.startsWith(l.href)
+                    ? "bg-indigo-600 text-white"
+                    : "text-slate-300 hover:bg-slate-700"
+                }`}>
+                <span className="text-lg">{l.icon}</span>
+                <span>{l.label}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Mobile bottom tab bar */}
       <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-800 border-t border-slate-700 flex">
-        {links.filter((l) => l.mobile).map((l) => (
-          <Link key={l.href} href={l.href}
+        {mainLinks.map((l) => (
+          <Link key={l.href} href={l.href} onClick={() => setMoreOpen(false)}
             className={`flex-1 flex flex-col items-center py-2 gap-0.5 text-xs font-medium transition-colors ${
               path.startsWith(l.href) ? "text-indigo-400" : "text-slate-500"
             }`}>
@@ -48,6 +77,13 @@ export default function NavBar() {
             <span>{l.label}</span>
           </Link>
         ))}
+        <button onClick={() => setMoreOpen((o) => !o)}
+          className={`flex-1 flex flex-col items-center py-2 gap-0.5 text-xs font-medium transition-colors ${
+            moreActive || moreOpen ? "text-indigo-400" : "text-slate-500"
+          }`}>
+          <span className="text-base">•••</span>
+          <span>Plus</span>
+        </button>
       </div>
     </>
   );
