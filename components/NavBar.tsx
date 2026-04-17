@@ -6,28 +6,30 @@ import { getAdminToken } from "@/lib/admin-auth";
 import Logo from "@/components/Logo";
 
 const mainLinks = [
-  { href: "/dashboard",    label: "Accueil",    icon: "🏠" },
-  { href: "/products",     label: "Produits",   icon: "📦" },
-  { href: "/stock/in",     label: "Entrée",     icon: "▲"  },
-  { href: "/stock/out",    label: "Sortie",     icon: "▼"  },
+  { href: "/dashboard",    label: "Accueil",   icon: "\uD83C\uDFE0" },
+  { href: "/products",     label: "Produits",  icon: "\uD83D\uDCE6" },
+  { href: "/commandes",    label: "Commandes", icon: "\uD83D\uDED2" },
+  { href: "/purchase-orders", label: "BC Fourn.", icon: "\uD83D\uDCCB" },
 ];
 
 const moreLinks = [
-  { href: "/stock/log",    label: "Opérations",   icon: "📋" },
-  { href: "/commandes",    label: "Commandes",    icon: "🛒" },
-  { href: "/clients",      label: "Clients",      icon: "👥" },
-  { href: "/fournisseurs", label: "Fournisseurs", icon: "🏭" },
+  { href: "/clients",      label: "Clients",      icon: "\uD83D\uDC65" },
+  { href: "/fournisseurs", label: "Fournisseurs",  icon: "\uD83C\uDFED" },
+  { href: "/adjustments",  label: "Ajustements",   icon: "\u2696\uFE0F"  },
+  { href: "/analytics",    label: "Analytique",    icon: "\uD83D\uDCCA" },
+  { href: "/stock/log",    label: "Op\u00e9rations",     icon: "\uD83D\uDCCB" },
 ];
 
 const allLinks = [...mainLinks, ...moreLinks];
 
-const ADMIN_PREFIXES = ["/dashboard", "/products", "/stock", "/clients", "/fournisseurs", "/commandes"];
+const ADMIN_PREFIXES = ["/dashboard", "/products", "/stock", "/clients", "/fournisseurs", "/commandes", "/purchase-orders", "/adjustments", "/analytics"];
 
 export default function NavBar() {
   const path = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
   const [pendingOrders, setPendingOrders] = useState(0);
   const [pendingClients, setPendingClients] = useState(0);
+  const [pendingApproval, setPendingApproval] = useState(0);
 
   const isAdminPath = ADMIN_PREFIXES.some((p) => path === p || path.startsWith(p + "/"));
 
@@ -35,6 +37,7 @@ export default function NavBar() {
     if (!isAdminPath || !getAdminToken()) return;
     fetch("/api/commandes/pending-count").then((r) => r.json()).then((n) => setPendingOrders(n || 0)).catch(() => {});
     fetch("/api/clients/pending-count").then((r) => r.json()).then((n) => setPendingClients(n || 0)).catch(() => {});
+    fetch("/api/clients/pending-approval-count").then((r) => r.json()).then((n) => setPendingApproval(n || 0)).catch(() => {});
   }, [isAdminPath, path]);
 
   if (!isAdminPath) return null;
@@ -50,15 +53,17 @@ export default function NavBar() {
 
   const linkLabel = (l: { href: string; label: string; icon: string }) => {
     if (l.href === "/commandes") return <>{l.label}{badge(pendingOrders)}</>;
-    if (l.href === "/clients") return <>{l.label}{badge(pendingClients)}</>;
+    if (l.href === "/clients") return <>{l.label}{badge(pendingClients + pendingApproval)}</>;
     return l.label;
   };
 
   return (
     <>
       {/* Desktop top bar */}
-      <div className="hidden sm:flex bg-slate-800 border-b border-slate-700 px-6 py-3 items-center gap-2">
-        <Link href="/" className="flex items-center gap-2 mr-6"><Logo size={24} /><span className="text-white font-bold text-lg">Pharmeon</span></Link>
+      <div className="hidden sm:flex bg-slate-800 border-b border-slate-700 px-6 py-3 items-center gap-2 flex-wrap">
+        <Link href="/" className="flex items-center gap-2 mr-6">
+          <Logo size={24} /><span className="text-white font-bold text-lg">Pharmeon</span>
+        </Link>
         {allLinks.map((l) => (
           <Link key={l.href} href={l.href}
             className={`flex items-center gap-1 text-sm font-medium px-3 py-1.5 rounded-lg transition-colors ${
@@ -66,14 +71,16 @@ export default function NavBar() {
                 ? "bg-indigo-600 text-white"
                 : "text-slate-400 hover:text-white hover:bg-slate-700"
             }`}>
-            <span>{l.icon}</span><span>{linkLabel(l)}</span>
+            <span>{l.icon}</span><span className="flex items-center">{linkLabel(l)}</span>
           </Link>
         ))}
       </div>
 
       {/* Mobile top brand */}
       <div className="sm:hidden bg-slate-800 border-b border-slate-700 px-4 py-3 flex items-center">
-        <Link href="/" className="flex items-center gap-2"><Logo size={22} /><span className="text-white font-bold text-lg">Pharmeon</span></Link>
+        <Link href="/" className="flex items-center gap-2">
+          <Logo size={22} /><span className="text-white font-bold text-lg">Pharmeon</span>
+        </Link>
       </div>
 
       {/* Mobile "Plus" overlay menu */}
@@ -84,9 +91,7 @@ export default function NavBar() {
             {moreLinks.map((l) => (
               <Link key={l.href} href={l.href} onClick={() => setMoreOpen(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
-                  path.startsWith(l.href)
-                    ? "bg-indigo-600 text-white"
-                    : "text-slate-300 hover:bg-slate-700"
+                  path.startsWith(l.href) ? "bg-indigo-600 text-white" : "text-slate-300 hover:bg-slate-700"
                 }`}>
                 <span className="text-lg">{l.icon}</span>
                 <span className="flex items-center">{linkLabel(l)}</span>
@@ -104,7 +109,7 @@ export default function NavBar() {
               path.startsWith(l.href) ? "text-indigo-400" : "text-slate-500"
             }`}>
             <span className="text-base">{l.icon}</span>
-            <span>{l.label}</span>
+            <span className="flex items-center">{linkLabel(l)}</span>
           </Link>
         ))}
         <button onClick={() => setMoreOpen((o) => !o)}
@@ -112,8 +117,8 @@ export default function NavBar() {
             moreActive || moreOpen ? "text-indigo-400" : "text-slate-500"
           }`}>
           <span className="text-base relative">
-            •••
-            {(pendingOrders > 0 || pendingClients > 0) && (
+            &bull;&bull;&bull;
+            {(pendingClients + pendingApproval > 0) && (
               <span className="absolute -top-1 -right-2 w-2 h-2 bg-red-500 rounded-full" />
             )}
           </span>

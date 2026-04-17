@@ -1,4 +1,12 @@
-export type PortailUser = { id: number; nom: string; email: string; type: string; ville?: string };
+export type PortailUser = {
+  id: number;
+  nom: string;
+  email: string;
+  type: string;
+  role: string;
+  ville?: string;
+  approved?: boolean;
+};
 
 export function getPortailUser(): PortailUser | null {
   if (typeof window === 'undefined') return null;
@@ -23,11 +31,24 @@ export function clearPortailSession() {
   localStorage.removeItem('portail_user');
 }
 
+export function isProUser(): boolean {
+  return getPortailUser()?.role === 'PRO';
+}
+
+export function isClientPublic(): boolean {
+  const u = getPortailUser();
+  return u?.role === 'CLIENT_PUBLIC' || (u != null && !u.role);
+}
+
 export async function portailFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const token = getPortailToken();
   const res = await fetch(`/api${path}`, {
     ...options,
-    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...options?.headers },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options?.headers,
+    },
   });
   if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.message || 'Erreur serveur'); }
   return res.json();
