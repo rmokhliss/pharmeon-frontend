@@ -76,7 +76,7 @@ export default function ProductsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
+    <div className="min-h-screen bg-slate-900 text-white pb-20 sm:pb-6">
       <div className="px-6 py-4 flex items-center justify-between border-b border-slate-700">
         <p className="text-slate-400 text-sm font-medium">Catalogue produits</p>
         <button
