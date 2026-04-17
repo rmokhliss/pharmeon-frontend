@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { saveAdminSession } from "@/lib/admin-auth";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+const API = "/api";
 
 export default function AdminLoginPage() {
   const router = useRouter();

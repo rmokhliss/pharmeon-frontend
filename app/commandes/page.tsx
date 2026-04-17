@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+const API = "/api";
 
 type CommandeItem = { id: number; quantite: number; prixUnitaire: number; product: { nom: string } };
 type Commande = { id: number; reference: string; statut: string; createdAt: string; note?: string; client: { nom: string; ville?: string; type: string }; items: CommandeItem[] };

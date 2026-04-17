@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { Product } from "@/app/products/page";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+const API = "/api";
 
 type Movement = {
   id: number;

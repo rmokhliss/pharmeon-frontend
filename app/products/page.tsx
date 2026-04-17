@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import ProductCard from "@/components/ProductCard";
 import ProductModal from "@/components/ProductModal";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+const API = "/api";
 
 export type Product = {
   id: number;

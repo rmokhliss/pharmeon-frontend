@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { getAdminToken } from "@/lib/admin-auth";
 
 const mainLinks = [
   { href: "/dashboard",    label: "Accueil",    icon: "🏠" },
@@ -19,32 +20,59 @@ const moreLinks = [
 
 const allLinks = [...mainLinks, ...moreLinks];
 
+const ADMIN_PREFIXES = ["/dashboard", "/products", "/stock", "/clients", "/fournisseurs", "/commandes"];
+
 export default function NavBar() {
   const path = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
+  const [pendingOrders, setPendingOrders] = useState(0);
+  const [pendingClients, setPendingClients] = useState(0);
+
+  const isAdminPath = ADMIN_PREFIXES.some((p) => path === p || path.startsWith(p + "/"));
+
+  useEffect(() => {
+    if (!isAdminPath || !getAdminToken()) return;
+    fetch("/api/commandes/pending-count").then((r) => r.json()).then((n) => setPendingOrders(n || 0)).catch(() => {});
+    fetch("/api/clients/pending-count").then((r) => r.json()).then((n) => setPendingClients(n || 0)).catch(() => {});
+  }, [isAdminPath, path]);
+
+  if (!isAdminPath) return null;
 
   const moreActive = moreLinks.some((l) => path.startsWith(l.href));
+
+  const badge = (count: number) =>
+    count > 0 ? (
+      <span className="ml-1 inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold bg-red-500 text-white rounded-full">
+        {count > 9 ? "9+" : count}
+      </span>
+    ) : null;
+
+  const linkLabel = (l: { href: string; label: string; icon: string }) => {
+    if (l.href === "/commandes") return <>{l.label}{badge(pendingOrders)}</>;
+    if (l.href === "/clients") return <>{l.label}{badge(pendingClients)}</>;
+    return l.label;
+  };
 
   return (
     <>
       {/* Desktop top bar */}
       <div className="hidden sm:flex bg-slate-800 border-b border-slate-700 px-6 py-3 items-center gap-2">
-        <span className="text-white font-bold text-lg mr-6">Pharmeon</span>
+        <Link href="/" className="text-white font-bold text-lg mr-6">Pharmeon</Link>
         {allLinks.map((l) => (
           <Link key={l.href} href={l.href}
-            className={`flex items-center gap-2 text-sm font-medium px-3 py-1.5 rounded-lg transition-colors ${
+            className={`flex items-center gap-1 text-sm font-medium px-3 py-1.5 rounded-lg transition-colors ${
               path.startsWith(l.href)
                 ? "bg-indigo-600 text-white"
                 : "text-slate-400 hover:text-white hover:bg-slate-700"
             }`}>
-            <span>{l.icon}</span><span>{l.label}</span>
+            <span>{l.icon}</span><span>{linkLabel(l)}</span>
           </Link>
         ))}
       </div>
 
       {/* Mobile top brand */}
       <div className="sm:hidden bg-slate-800 border-b border-slate-700 px-4 py-3 flex items-center">
-        <span className="text-white font-bold text-lg">Pharmeon</span>
+        <Link href="/" className="text-white font-bold text-lg">Pharmeon</Link>
       </div>
 
       {/* Mobile "Plus" overlay menu */}
@@ -60,7 +88,7 @@ export default function NavBar() {
                     : "text-slate-300 hover:bg-slate-700"
                 }`}>
                 <span className="text-lg">{l.icon}</span>
-                <span>{l.label}</span>
+                <span className="flex items-center">{linkLabel(l)}</span>
               </Link>
             ))}
           </div>
@@ -79,10 +107,15 @@ export default function NavBar() {
           </Link>
         ))}
         <button onClick={() => setMoreOpen((o) => !o)}
-          className={`flex-1 flex flex-col items-center py-2 gap-0.5 text-xs font-medium transition-colors ${
+          className={`flex-1 flex flex-col items-center py-2 gap-0.5 text-xs font-medium transition-colors relative ${
             moreActive || moreOpen ? "text-indigo-400" : "text-slate-500"
           }`}>
-          <span className="text-base">•••</span>
+          <span className="text-base relative">
+            •••
+            {(pendingOrders > 0 || pendingClients > 0) && (
+              <span className="absolute -top-1 -right-2 w-2 h-2 bg-red-500 rounded-full" />
+            )}
+          </span>
           <span>Plus</span>
         </button>
       </div>

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Product } from "@/app/products/page";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+const API = "/api";
 
 type Props = { type: "ENTREE" | "SORTIE" };
 type Tiers = { id: number; nom: string };

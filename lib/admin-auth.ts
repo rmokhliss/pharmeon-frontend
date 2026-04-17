@@ -12,9 +12,8 @@ export function clearAdminSession() {
 }
 
 export async function adminFetch<T>(path: string, options?: RequestInit): Promise<T> {
-  const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
   const token = getAdminToken();
-  const res = await fetch(`${API}${path}`, {
+  const res = await fetch(`/api${path}`, {
     ...options,
     headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...options?.headers },
   });

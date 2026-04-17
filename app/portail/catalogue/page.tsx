@@ -22,7 +22,7 @@ export default function CataloguePage() {
     const u = getPortailUser();
     if (!u) { router.replace("/portail"); return; }
     setUser(u);
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/products`)
+    fetch(`/api/products`)
       .then((r) => r.json()).then(setProducts);
   }, [router]);
 

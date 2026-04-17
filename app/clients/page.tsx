@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-const PORTAL_URL = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== "undefined" ? window.location.origin : "");
+const API = "/api";
+const PORTAL_URL = typeof window !== "undefined" ? window.location.origin : "";
 
 type Client = {
   id: number;
@@ -20,6 +20,7 @@ const emptyForm = { nom: "", type: "PHARMACIE", telephone: "", ville: "", adress
 
 export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([]);
+  const [pending, setPending] = useState<Client[]>([]);
   const [filter, setFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("ALL");
 
@@ -42,9 +43,14 @@ export default function ClientsPage() {
   const load = useCallback(() => {
     const q = filter ? `?search=${encodeURIComponent(filter)}` : "";
     fetch(`${API}/clients${q}`).then((r) => r.json()).then(setClients);
+    fetch(`${API}/clients/pending`).then((r) => r.json()).then(setPending).catch(() => {});
   }, [filter]);
 
   useEffect(() => { load(); }, [load]);
+
+  const approveClient = async (c: Client) => {
+    openAccess(c);
+  };
 
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -153,6 +159,30 @@ export default function ClientsPage() {
           ))}
         </div>
       </div>
+
+      {pending.length > 0 && (
+        <div className="px-6 pt-4">
+          <div className="bg-amber-900/20 border border-amber-700/40 rounded-xl p-4">
+            <p className="text-amber-400 font-semibold text-sm mb-3">
+              Demandes en attente ({pending.length})
+            </p>
+            <div className="flex flex-col gap-2">
+              {pending.map((c) => (
+                <div key={c.id} className="bg-slate-800 rounded-lg p-3 flex items-center justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white text-sm font-medium truncate">{c.nom}</p>
+                    <p className="text-slate-400 text-xs">{c.type}{c.ville ? ` · ${c.ville}` : ""}{c.email ? ` · ${c.email}` : ""}</p>
+                  </div>
+                  <button onClick={() => approveClient(c)}
+                    className="shrink-0 text-xs px-3 py-1.5 rounded-lg bg-emerald-700/40 hover:bg-emerald-700/70 text-emerald-400 font-medium">
+                    Activer →
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="px-6 py-4 flex flex-col gap-3">
         {visible.length === 0 && <p className="text-slate-500 text-sm text-center py-8">Aucun client trouvé</p>}
