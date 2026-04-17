@@ -12,15 +12,12 @@ export default function ProductCard({ product, onEdit, onDelete }: Props) {
     ? Math.round(((product.prix_vente - product.prix_achat) / product.prix_vente) * 100)
     : 0;
 
-  const stockStatus =
+  const { label: stockLabel, className: stockStatus } =
     product.stock === 0
-      ? "bg-red-500/20 text-red-400"
+      ? { label: "Rupture",   className: "bg-red-500/20 text-red-400" }
       : product.stock <= product.stock_min
-      ? "bg-yellow-500/20 text-yellow-400"
-      : "bg-green-500/20 text-green-400";
-
-  const stockLabel =
-    product.stock === 0 ? "Rupture" : product.stock <= product.stock_min ? "Stock bas" : "En stock";
+      ? { label: "Stock bas", className: "bg-yellow-500/20 text-yellow-400" }
+      : { label: "En stock",  className: "bg-green-500/20 text-green-400" };
 
   return (
     <div className="bg-slate-800 border border-slate-700 rounded-xl p-4 flex flex-col gap-3 hover:border-indigo-500/50 transition-colors">

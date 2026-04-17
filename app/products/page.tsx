@@ -19,69 +19,71 @@ export type Product = {
   description?: string;
 };
 
+async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
+  const res = await fetch(`${API}${path}`, options);
+  if (!res.ok) throw new Error(`API error ${res.status}`);
+  return res.json();
+}
+
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [search, setSearch] = useState("");
   const [selectedCat, setSelectedCat] = useState("");
   const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editProduct, setEditProduct] = useState<Product | null>(null);
+  const [editTarget, setEditTarget] = useState<Product | "new" | null>(null);
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (s: string, cat: string) => {
     setLoading(true);
-    const params = new URLSearchParams();
-    if (search) params.set("search", search);
-    if (selectedCat) params.set("categorie", selectedCat);
-    const res = await fetch(`${API}/products?${params}`);
-    setProducts(await res.json());
-    setLoading(false);
+    try {
+      const params = new URLSearchParams();
+      if (s) params.set("search", s);
+      if (cat) params.set("categorie", cat);
+      setProducts(await apiFetch<Product[]>(`/products?${params}`));
+    } catch {
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const fetchCategories = async () => {
-    const res = await fetch(`${API}/products/categories`);
-    const data = await res.json();
-    setCategories(data.map((d: { categorie: string }) => d.categorie));
-  };
+  useEffect(() => {
+    apiFetch<{ categorie: string }[]>("/products/categories")
+      .then((data) => setCategories(data.map((d) => d.categorie)))
+      .catch(() => {});
+  }, []);
 
-  useEffect(() => { fetchCategories(); }, []);
-  useEffect(() => { fetchProducts(); }, [search, selectedCat]);
+  useEffect(() => {
+    const timer = setTimeout(() => fetchProducts(search, selectedCat), 300);
+    return () => clearTimeout(timer);
+  }, [search, selectedCat]);
 
   const handleDelete = async (id: number) => {
     if (!confirm("Supprimer ce produit ?")) return;
-    await fetch(`${API}/products/${id}`, { method: "DELETE" });
-    fetchProducts();
+    await apiFetch(`/products/${id}`, { method: "DELETE" });
+    fetchProducts(search, selectedCat);
   };
 
   const handleSave = async (data: Partial<Product>) => {
-    if (editProduct) {
-      await fetch(`${API}/products/${editProduct.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-    } else {
-      await fetch(`${API}/products`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-    }
-    setModalOpen(false);
-    setEditProduct(null);
-    fetchProducts();
+    const isEdit = editTarget !== "new" && editTarget !== null;
+    await apiFetch(isEdit ? `/products/${editTarget.id}` : "/products", {
+      method: isEdit ? "PUT" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    setEditTarget(null);
+    fetchProducts(search, selectedCat);
   };
 
   return (
     <div className="min-h-screen bg-slate-900 text-white">
-      {/* Header */}
       <div className="bg-slate-800 border-b border-slate-700 px-6 py-4 flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-white">Pharmeon</h1>
           <p className="text-slate-400 text-xs">Gestion des produits</p>
         </div>
         <button
-          onClick={() => { setEditProduct(null); setModalOpen(true); }}
+          onClick={() => setEditTarget("new")}
           className="bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
         >
           + Nouveau produit
@@ -89,7 +91,6 @@ export default function ProductsPage() {
       </div>
 
       <div className="px-6 py-4">
-        {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-3 mb-6">
           <input
             type="text"
@@ -110,12 +111,10 @@ export default function ProductsPage() {
           </select>
         </div>
 
-        {/* Stats */}
         <p className="text-slate-400 text-sm mb-4">
           {loading ? "Chargement..." : `${products.length} produit(s)`}
         </p>
 
-        {/* Grid */}
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {Array.from({ length: 8 }).map((_, i) => (
@@ -128,7 +127,7 @@ export default function ProductsPage() {
               <ProductCard
                 key={p.id}
                 product={p}
-                onEdit={() => { setEditProduct(p); setModalOpen(true); }}
+                onEdit={() => setEditTarget(p)}
                 onDelete={() => handleDelete(p.id)}
               />
             ))}
@@ -136,12 +135,12 @@ export default function ProductsPage() {
         )}
       </div>
 
-      {modalOpen && (
+      {editTarget !== null && (
         <ProductModal
-          product={editProduct}
+          product={editTarget === "new" ? null : editTarget}
           categories={categories}
           onSave={handleSave}
-          onClose={() => { setModalOpen(false); setEditProduct(null); }}
+          onClose={() => setEditTarget(null)}
         />
       )}
     </div>

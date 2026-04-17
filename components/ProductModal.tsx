@@ -40,7 +40,7 @@ export default function ProductModal({ product, categories, onSave, onClose }: P
     }
   }, [product]);
 
-  const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
