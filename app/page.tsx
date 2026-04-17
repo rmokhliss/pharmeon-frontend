@@ -1,4 +1,7 @@
+import { redirect } from "next/navigation";
+
 export default function Home() {
+  redirect("/products");
   return (
     <main className="min-h-screen bg-slate-900 flex flex-col items-center justify-center px-6">
       <div className="text-center max-w-lg">
