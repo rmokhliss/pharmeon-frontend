@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   async rewrites() {
-    const backend = process.env.BACKEND_URL || "http://localhost:3001";
+    const backend = process.env.BACKEND_URL || "https://pharmeon-backend-production.up.railway.app";
     return [{ source: "/api/:path*", destination: `${backend}/:path*` }];
   },
 };
