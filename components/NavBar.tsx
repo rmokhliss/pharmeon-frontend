@@ -12,6 +12,7 @@ const mainLinks = [
 
 const moreLinks = [
   { href: "/stock/log",    label: "Opérations",   icon: "📋" },
+  { href: "/commandes",    label: "Commandes",    icon: "🛒" },
   { href: "/clients",      label: "Clients",      icon: "👥" },
   { href: "/fournisseurs", label: "Fournisseurs", icon: "🏭" },
 ];
