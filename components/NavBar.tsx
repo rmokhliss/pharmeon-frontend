@@ -3,11 +3,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const links = [
-  { href: "/dashboard", label: "Accueil",    icon: "🏠" },
-  { href: "/products",  label: "Produits",   icon: "📦" },
-  { href: "/stock/in",  label: "Entrée",     icon: "▲" },
-  { href: "/stock/out", label: "Sortie",     icon: "▼" },
-  { href: "/stock/log", label: "Opérations", icon: "📋" },
+  { href: "/dashboard",    label: "Accueil",      icon: "🏠",  mobile: true  },
+  { href: "/products",     label: "Produits",     icon: "📦",  mobile: true  },
+  { href: "/stock/in",     label: "Entrée",       icon: "▲",   mobile: true  },
+  { href: "/stock/out",    label: "Sortie",       icon: "▼",   mobile: true  },
+  { href: "/stock/log",    label: "Opérations",   icon: "📋",  mobile: true  },
+  { href: "/clients",      label: "Clients",      icon: "👥",  mobile: false },
+  { href: "/fournisseurs", label: "Fournisseurs", icon: "🏭",  mobile: false },
 ];
 
 export default function NavBar() {
@@ -35,9 +37,9 @@ export default function NavBar() {
         <span className="text-white font-bold text-lg">Pharmeon</span>
       </div>
 
-      {/* Mobile bottom tab bar */}
+      {/* Mobile bottom tab bar — 5 primary tabs only */}
       <div className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-800 border-t border-slate-700 flex">
-        {links.map((l) => (
+        {links.filter((l) => l.mobile).map((l) => (
           <Link key={l.href} href={l.href}
             className={`flex-1 flex flex-col items-center py-2 gap-0.5 text-xs font-medium transition-colors ${
               path.startsWith(l.href) ? "text-indigo-400" : "text-slate-500"
