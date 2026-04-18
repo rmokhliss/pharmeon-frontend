@@ -13,17 +13,18 @@ const mainLinks = [
 ];
 
 const moreLinks = [
-  { href: "/clients",        label: "Clients",      icon: "\uD83D\uDC65" },
-  { href: "/fournisseurs",   label: "Fournisseurs",  icon: "\uD83C\uDFED" },
-  { href: "/demandes-acces", label: "Demandes",      icon: "\uD83D\uDCE5" },
-  { href: "/adjustments",    label: "Ajustements",   icon: "\u2696\uFE0F"  },
-  { href: "/analytics",      label: "Analytique",    icon: "\uD83D\uDCCA" },
-  { href: "/stock/log",      label: "Op\u00e9rations",     icon: "\uD83D\uDCCB" },
+  { href: "/clients",         label: "Clients",       icon: "\uD83D\uDC65" },
+  { href: "/fournisseurs",    label: "Fournisseurs",  icon: "\uD83C\uDFED" },
+  { href: "/demandes-acces",  label: "Demandes",      icon: "\uD83D\uDCE5" },
+  { href: "/delivery-notes",  label: "Livraisons",    icon: "\uD83D\uDE9A" },
+  { href: "/adjustments",     label: "Ajustements",   icon: "\u2696\uFE0F"  },
+  { href: "/analytics",       label: "Analytique",    icon: "\uD83D\uDCCA" },
+  { href: "/stock/log",       label: "Op\u00e9rations",     icon: "\uD83D\uDCCB" },
 ];
 
 const allLinks = [...mainLinks, ...moreLinks];
 
-const ADMIN_PREFIXES = ["/dashboard", "/products", "/stock", "/clients", "/fournisseurs", "/commandes", "/purchase-orders", "/adjustments", "/analytics", "/demandes-acces"];
+const ADMIN_PREFIXES = ["/dashboard", "/products", "/stock", "/clients", "/fournisseurs", "/commandes", "/purchase-orders", "/adjustments", "/analytics", "/demandes-acces", "/delivery-notes"];
 
 export default function NavBar() {
   const path = usePathname();
