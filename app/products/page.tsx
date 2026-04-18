@@ -2,8 +2,7 @@
 import { useEffect, useState } from "react";
 import ProductCard from "@/components/ProductCard";
 import ProductModal from "@/components/ProductModal";
-
-const API = "/api";
+import { adminFetch } from "@/lib/admin-auth";
 
 export type Product = {
   id: number;
@@ -13,17 +12,17 @@ export type Product = {
   categorie: string;
   prix_achat: number;
   prix_vente: number;
+  cost_price?: number;
+  retail_price?: number;
+  wholesale_price?: number;
+  retail_discount_pct?: number;
+  wholesale_discount_pct?: number;
   unite: string;
   stock: number;
   stock_min: number;
   description?: string;
+  image_url?: string;
 };
-
-async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API}${path}`, options);
-  if (!res.ok) throw new Error(`API error ${res.status}`);
-  return res.json();
-}
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -32,15 +31,17 @@ export default function ProductsPage() {
   const [selectedCat, setSelectedCat] = useState("");
   const [loading, setLoading] = useState(true);
   const [editTarget, setEditTarget] = useState<Product | "new" | null>(null);
+  const [error, setError] = useState("");
 
   const fetchProducts = async (s: string, cat: string) => {
-    setLoading(true);
+    setLoading(true); setError("");
     try {
       const params = new URLSearchParams();
       if (s) params.set("search", s);
       if (cat) params.set("categorie", cat);
-      setProducts(await apiFetch<Product[]>(`/products?${params}`));
-    } catch {
+      setProducts(await adminFetch<Product[]>(`/products?${params}`));
+    } catch (e: any) {
+      setError(e.message);
       setProducts([]);
     } finally {
       setLoading(false);
@@ -48,7 +49,7 @@ export default function ProductsPage() {
   };
 
   useEffect(() => {
-    apiFetch<{ categorie: string }[]>("/products/categories")
+    adminFetch<{ categorie: string }[]>("/products/categories")
       .then((data) => setCategories(data.map((d) => d.categorie)))
       .catch(() => {});
   }, []);
@@ -60,19 +61,22 @@ export default function ProductsPage() {
 
   const handleDelete = async (id: number) => {
     if (!confirm("Supprimer ce produit ?")) return;
-    await apiFetch(`/products/${id}`, { method: "DELETE" });
-    fetchProducts(search, selectedCat);
+    try {
+      await adminFetch(`/products/${id}`, { method: "DELETE" });
+      fetchProducts(search, selectedCat);
+    } catch (e: any) { setError(e.message); }
   };
 
   const handleSave = async (data: Partial<Product>) => {
     const isEdit = editTarget !== "new" && editTarget !== null;
-    await apiFetch(isEdit ? `/products/${editTarget.id}` : "/products", {
-      method: isEdit ? "PUT" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    });
-    setEditTarget(null);
-    fetchProducts(search, selectedCat);
+    try {
+      await adminFetch(isEdit ? `/products/${editTarget.id}` : "/products", {
+        method: isEdit ? "PUT" : "POST",
+        body: JSON.stringify(data),
+      });
+      setEditTarget(null);
+      fetchProducts(search, selectedCat);
+    } catch (e: any) { setError(e.message); }
   };
 
   return (
@@ -86,6 +90,12 @@ export default function ProductsPage() {
           + Nouveau produit
         </button>
       </div>
+
+      {error && (
+        <div className="px-6 pt-3">
+          <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{error}</p>
+        </div>
+      )}
 
       <div className="px-6 py-4">
         <div className="flex flex-col sm:flex-row gap-3 mb-6">
