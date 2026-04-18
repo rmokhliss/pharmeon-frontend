@@ -2,6 +2,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { adminFetch, getAdminToken } from "@/lib/admin-auth";
 
+type Livreur = { id: number; nom: string; telephone?: string; vehicule?: string };
+
 type BLList = {
   id: number;
   reference: string;
@@ -10,6 +12,7 @@ type BLList = {
   tracking_number?: string;
   createdAt: string;
   commande: { reference: string; client: { nom: string } };
+  livreur?: Livreur | null;
 };
 
 type BLDetail = BLList & {
@@ -33,11 +36,13 @@ const STATUT_COLOR: Record<string, string> = {
 
 export default function DeliveryNotesPage() {
   const [bls, setBls] = useState<BLList[]>([]);
+  const [livreurs, setLivreurs] = useState<Livreur[]>([]);
   const [filter, setFilter] = useState("ALL");
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<number | null>(null);
   const [detail, setDetail] = useState<BLDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [assigning, setAssigning] = useState<number | null>(null);
   const [error, setError] = useState("");
 
   const load = useCallback(() => {
@@ -45,6 +50,25 @@ export default function DeliveryNotesPage() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    adminFetch<Livreur[]>("/livreurs").then(setLivreurs).catch(() => {});
+  }, []);
+
+  const assignLivreur = async (blId: number, livreurId: number | null) => {
+    setAssigning(blId);
+    try {
+      await adminFetch(`/delivery-notes/${blId}/livreur`, {
+        method: "PATCH",
+        body: JSON.stringify({ livreurId }),
+      });
+      load();
+      if (detail && detail.id === blId) {
+        const d = await adminFetch<BLDetail>(`/delivery-notes/${blId}`);
+        setDetail(d);
+      }
+    } catch (e: any) { setError(e.message); }
+    finally { setAssigning(null); }
+  };
 
   const toggle = async (id: number) => {
     if (expanded === id) { setExpanded(null); setDetail(null); return; }
@@ -131,6 +155,7 @@ export default function DeliveryNotesPage() {
                     {bl.commande.client.nom} · Cmd {bl.commande.reference}
                     {" · "}{bl.delivery_date ? new Date(bl.delivery_date).toLocaleDateString("fr-FR") : new Date(bl.createdAt).toLocaleDateString("fr-FR")}
                     {bl.tracking_number && <> · <span className="text-indigo-300 font-mono">{bl.tracking_number}</span></>}
+                    {bl.livreur && <> · 🛵 <span className="text-slate-300">{bl.livreur.nom}</span></>}
                   </p>
                 </div>
                 <span className="text-slate-400 text-sm mt-0.5">{isOpen ? "▲" : "▼"}</span>
@@ -162,9 +187,30 @@ export default function DeliveryNotesPage() {
                           </div>
                         ))}
                       </div>
-                      <div className="pt-2 border-t border-slate-700">
+                      <div className="pt-2 border-t border-slate-700 flex flex-col gap-2">
+                        <div className="flex items-center gap-2">
+                          <label className="text-xs text-slate-400 flex-shrink-0">Livreur :</label>
+                          <select
+                            value={detail.livreur?.id ?? ""}
+                            onChange={(e) => assignLivreur(bl.id, e.target.value ? Number(e.target.value) : null)}
+                            disabled={assigning === bl.id}
+                            className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500 disabled:opacity-50"
+                          >
+                            <option value="">— Non assigné —</option>
+                            {livreurs.map((l) => (
+                              <option key={l.id} value={l.id}>{l.nom}{l.vehicule ? ` (${l.vehicule})` : ""}</option>
+                            ))}
+                          </select>
+                        </div>
+                        {detail.livreur && (detail.livreur.telephone || detail.livreur.vehicule) && (
+                          <p className="text-slate-400 text-xs">
+                            {detail.livreur.telephone && <>📞 {detail.livreur.telephone}</>}
+                            {detail.livreur.telephone && detail.livreur.vehicule && " · "}
+                            {detail.livreur.vehicule && <>🚚 {detail.livreur.vehicule}</>}
+                          </p>
+                        )}
                         <button onClick={() => openPdf(bl.id)}
-                          className="text-xs px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200">
+                          className="text-xs px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 self-start">
                           📄 Voir PDF
                         </button>
                       </div>
