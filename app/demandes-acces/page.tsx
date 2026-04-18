@@ -8,9 +8,15 @@ type Demande = {
   nom: string;
   type?: string;
   ville?: string;
+  code_postal?: string;
+  adresse?: string;
   telephone?: string;
   email: string;
   contact?: string;
+  ice?: string;
+  patente?: string;
+  rc?: string;
+  site_web?: string;
   message?: string;
   statut: string;
   createdAt: string;
@@ -127,10 +133,19 @@ export default function DemandesAccesPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                     <div><span className="text-slate-400 text-xs">Email : </span><span className="text-white">{d.email}</span></div>
                     {d.telephone && <div><span className="text-slate-400 text-xs">Tél : </span><span className="text-white">{d.telephone}</span></div>}
-                    {d.ville && <div><span className="text-slate-400 text-xs">Ville : </span><span className="text-white">{d.ville}</span></div>}
+                    {d.ville && <div><span className="text-slate-400 text-xs">Ville : </span><span className="text-white">{d.ville}{d.code_postal ? `, ${d.code_postal}` : ""}</span></div>}
                     {d.type && <div><span className="text-slate-400 text-xs">Type : </span><span className="text-white">{d.type}</span></div>}
                     {d.contact && <div><span className="text-slate-400 text-xs">Contact : </span><span className="text-white">{d.contact}</span></div>}
+                    {d.adresse && <div className="sm:col-span-2"><span className="text-slate-400 text-xs">Adresse : </span><span className="text-white">{d.adresse}</span></div>}
+                    {d.site_web && <div className="sm:col-span-2"><span className="text-slate-400 text-xs">Site web : </span><span className="text-white">{d.site_web}</span></div>}
                   </div>
+                  {(d.ice || d.patente || d.rc) && (
+                    <div className="bg-slate-900 rounded-lg px-3 py-2 grid grid-cols-3 gap-2 text-sm">
+                      {d.ice && <div><p className="text-slate-500 uppercase tracking-wider text-[10px]">ICE</p><p className="text-white">{d.ice}</p></div>}
+                      {d.patente && <div><p className="text-slate-500 uppercase tracking-wider text-[10px]">Patente</p><p className="text-white">{d.patente}</p></div>}
+                      {d.rc && <div><p className="text-slate-500 uppercase tracking-wider text-[10px]">RC</p><p className="text-white">{d.rc}</p></div>}
+                    </div>
+                  )}
                   {d.message && (
                     <div className="bg-slate-900 rounded-lg px-3 py-2">
                       <p className="text-slate-400 text-xs mb-1">Message</p>

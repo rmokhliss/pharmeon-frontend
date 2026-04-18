@@ -8,15 +8,27 @@ type Client = {
   id: number;
   nom: string;
   type: string;
+  role?: string;
   telephone?: string;
   ville?: string;
+  code_postal?: string;
   adresse?: string;
   email?: string;
+  contact_nom?: string;
+  ice?: string;
+  patente?: string;
+  rc?: string;
+  site_web?: string;
   actif: boolean;
 };
 
 const TYPES = ["PHARMACIE", "PARA", "PARTICULIER"];
-const emptyForm = { nom: "", type: "PHARMACIE", telephone: "", ville: "", adresse: "", email: "" };
+const emptyForm = {
+  nom: "", type: "PHARMACIE",
+  telephone: "", email: "",
+  ville: "", code_postal: "", adresse: "",
+  contact_nom: "", ice: "", patente: "", rc: "", site_web: "",
+};
 
 export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([]);
@@ -57,7 +69,14 @@ export default function ClientsPage() {
   const openAdd = () => { setEditTarget(null); setForm(emptyForm); setError(""); setModal(true); };
   const openEdit = (c: Client) => {
     setEditTarget(c);
-    setForm({ nom: c.nom, type: c.type, telephone: c.telephone || "", ville: c.ville || "", adresse: c.adresse || "", email: c.email || "" });
+    setForm({
+      nom: c.nom, type: c.type,
+      telephone: c.telephone || "", email: c.email || "",
+      ville: c.ville || "", code_postal: c.code_postal || "", adresse: c.adresse || "",
+      contact_nom: c.contact_nom || "",
+      ice: c.ice || "", patente: c.patente || "", rc: c.rc || "",
+      site_web: c.site_web || "",
+    });
     setError("");
     setModal(true);
   };
@@ -67,15 +86,14 @@ export default function ClientsPage() {
     setSaving(true); setError("");
     try {
       const path = editTarget ? `/clients/${editTarget.id}` : `/clients`;
+      const body: Record<string, string | undefined> = { nom: form.nom, type: form.type };
+      for (const k of Object.keys(form) as (keyof typeof form)[]) {
+        if (k === "nom" || k === "type") continue;
+        body[k] = form[k] || undefined;
+      }
       await adminFetch(path, {
         method: editTarget ? "PUT" : "POST",
-        body: JSON.stringify({
-          ...form,
-          telephone: form.telephone || undefined,
-          ville: form.ville || undefined,
-          adresse: form.adresse || undefined,
-          email: form.email || undefined,
-        }),
+        body: JSON.stringify(body),
       });
       setModal(false);
       load();
@@ -213,21 +231,49 @@ export default function ClientsPage() {
       {/* Edit modal */}
       {modal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 px-4 pb-4 sm:pb-0">
-          <div className="bg-slate-800 rounded-2xl w-full max-w-md p-6 flex flex-col gap-4">
+          <div className="bg-slate-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 flex flex-col gap-4">
             <h2 className="text-white font-semibold">{editTarget ? "Modifier le client" : "Nouveau client"}</h2>
             <form onSubmit={save} className="flex flex-col gap-3">
-              <input required placeholder="Nom *" value={form.nom} onChange={(e) => set("nom", e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500" />
-              <select value={form.type} onChange={(e) => set("type", e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500">
-                {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-              </select>
-              <input placeholder="Téléphone" value={form.telephone} onChange={(e) => set("telephone", e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500" />
-              <input placeholder="Ville" value={form.ville} onChange={(e) => set("ville", e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500" />
-              <input placeholder="Adresse" value={form.adresse} onChange={(e) => set("adresse", e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:border-indigo-500" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <ClientField label="Nom *" required value={form.nom} onChange={(v) => set("nom", v)} />
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">Type</label>
+                  <select value={form.type} onChange={(e) => set("type", e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
+                    {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <ClientField label="Téléphone" value={form.telephone} onChange={(v) => set("telephone", v)} />
+                <ClientField label="Email" type="email" value={form.email} onChange={(v) => set("email", v)} />
+              </div>
+
+              <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider pt-2 border-t border-slate-700">Adresse</p>
+              <ClientField label="Adresse" value={form.adresse} onChange={(v) => set("adresse", v)} />
+              <div className="grid grid-cols-2 gap-3">
+                <ClientField label="Ville" value={form.ville} onChange={(v) => set("ville", v)} />
+                <ClientField label="Code postal" value={form.code_postal} onChange={(v) => set("code_postal", v)} />
+              </div>
+
+              {form.type !== "PARTICULIER" && (
+                <>
+                  <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider pt-2 border-t border-slate-700">
+                    Identifiants pro (pharmacies / paras)
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <ClientField label="Personne de contact" value={form.contact_nom} onChange={(v) => set("contact_nom", v)} />
+                    <ClientField label="Site web" type="url" value={form.site_web} onChange={(v) => set("site_web", v)} />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <ClientField label="ICE" value={form.ice} onChange={(v) => set("ice", v)} />
+                    <ClientField label="Patente" value={form.patente} onChange={(v) => set("patente", v)} />
+                    <ClientField label="RC" value={form.rc} onChange={(v) => set("rc", v)} />
+                  </div>
+                </>
+              )}
+
               {error && <p className="text-red-400 text-xs">{error}</p>}
               <div className="flex gap-2 pt-1">
                 <button type="button" onClick={() => setModal(false)}
@@ -311,6 +357,18 @@ export default function ClientsPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function ClientField({ label, value, onChange, type = "text", required = false }: {
+  label: string; value: string; onChange: (v: string) => void; type?: string; required?: boolean;
+}) {
+  return (
+    <div>
+      <label className="block text-xs text-slate-400 mb-1">{label}</label>
+      <input type={type} required={required} value={value} onChange={(e) => onChange(e.target.value)}
+        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500" />
     </div>
   );
 }
