@@ -15,7 +15,11 @@ export async function adminFetch<T>(path: string, options?: RequestInit): Promis
   const token = getAdminToken();
   const res = await fetch(`/api${path}`, {
     ...options,
-    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}), ...options?.headers },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options?.headers,
+    },
   });
   if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.message || 'Erreur serveur'); }
   return res.json();
