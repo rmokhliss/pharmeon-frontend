@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { adminFetch } from "@/lib/admin-auth";
+import { adminFetch, getAdminToken } from "@/lib/admin-auth";
 
 type CommandeItem = {
   id: number;
@@ -98,6 +98,15 @@ export default function CommandesAdminPage() {
     setDelivForm({ livreurId: "", delivery_date: new Date().toISOString().slice(0, 10), tracking_number: "" });
     setDeliverModal(c);
     setError("");
+  };
+
+  const openPdf = (id: number) => {
+    const token = getAdminToken();
+    if (!token) { setError("Session expirée"); return; }
+    fetch(`/api/commandes/${id}/pdf`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.blob())
+      .then((b) => { const url = URL.createObjectURL(b); window.open(url, "_blank"); })
+      .catch(() => setError("Erreur génération PDF"));
   };
 
   const confirmDeliver = async () => {
@@ -288,6 +297,11 @@ export default function CommandesAdminPage() {
                     <span className="text-slate-400 text-xs">Total</span>
                     <span className="text-white font-semibold">{total.toFixed(2)} MAD</span>
                   </div>
+
+                  <button onClick={() => openPdf(c.id)}
+                    className="text-xs px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 self-start">
+                    📄 BC (PDF)
+                  </button>
 
                   {c.note && <p className="text-slate-400 text-xs italic">Note : {c.note}</p>}
 
