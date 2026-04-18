@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
+import { adminFetch } from "@/lib/admin-auth";
 
-const API = "/api";
 const PORTAL_URL = typeof window !== "undefined" ? window.location.origin : "";
 
 type Client = {
@@ -42,8 +42,8 @@ export default function ClientsPage() {
 
   const load = useCallback(() => {
     const q = filter ? `?search=${encodeURIComponent(filter)}` : "";
-    fetch(`${API}/clients${q}`).then((r) => r.json()).then(setClients);
-    fetch(`${API}/clients/pending`).then((r) => r.json()).then(setPending).catch(() => {});
+    adminFetch<Client[]>(`/clients${q}`).then(setClients).catch((e) => setError(e.message));
+    adminFetch<Client[]>(`/clients/pending`).then(setPending).catch(() => {});
   }, [filter]);
 
   useEffect(() => { load(); }, [load]);
@@ -66,10 +66,9 @@ export default function ClientsPage() {
     e.preventDefault();
     setSaving(true); setError("");
     try {
-      const url = editTarget ? `${API}/clients/${editTarget.id}` : `${API}/clients`;
-      const res = await fetch(url, {
+      const path = editTarget ? `/clients/${editTarget.id}` : `/clients`;
+      await adminFetch(path, {
         method: editTarget ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
           telephone: form.telephone || undefined,
@@ -78,7 +77,6 @@ export default function ClientsPage() {
           email: form.email || undefined,
         }),
       });
-      if (!res.ok) { const d = await res.json(); throw new Error(d.message || "Erreur"); }
       setModal(false);
       load();
     } catch (err: any) { setError(err.message); }
@@ -87,8 +85,10 @@ export default function ClientsPage() {
 
   const remove = async (id: number) => {
     if (!confirm("Supprimer ce client ?")) return;
-    await fetch(`${API}/clients/${id}`, { method: "DELETE" });
-    load();
+    try {
+      await adminFetch(`/clients/${id}`, { method: "DELETE" });
+      load();
+    } catch (err: any) { setError(err.message); }
   };
 
   const openAccess = (c: Client) => {
@@ -105,20 +105,14 @@ export default function ClientsPage() {
     if (!accessClient) return;
     setAccessSaving(true); setAccessError("");
     try {
-      // Update email on client
-      await fetch(`${API}/clients/${accessClient.id}`, {
+      await adminFetch(`/clients/${accessClient.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: accessForm.email }),
-      }).then((r) => { if (!r.ok) throw new Error("Erreur mise à jour email"); });
-
-      // Set password
-      await fetch(`${API}/auth/client/${accessClient.id}/password`, {
+      });
+      await adminFetch(`/auth/client/${accessClient.id}/password`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password: accessForm.password }),
-      }).then((r) => { if (!r.ok) throw new Error("Erreur mise à jour mot de passe"); });
-
+      });
       setAccessDone(true);
       load();
     } catch (err: any) { setAccessError(err.message); }

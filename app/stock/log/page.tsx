@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-
-const API = "/api";
+import { adminFetch } from "@/lib/admin-auth";
 
 type Movement = {
   id: number;
@@ -15,12 +14,13 @@ type Movement = {
 export default function StockLogPage() {
   const [movements, setMovements] = useState<Movement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [filter, setFilter] = useState<"ALL" | "ENTREE" | "SORTIE">("ALL");
 
   useEffect(() => {
-    fetch(`${API}/stock`)
-      .then((r) => r.json())
+    adminFetch<Movement[]>("/stock")
       .then(setMovements)
+      .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
 
@@ -32,6 +32,12 @@ export default function StockLogPage() {
         <p className="text-slate-400 text-sm font-medium">Historique des opérations</p>
         <span className="text-slate-500 text-xs">{filtered.length} opération(s)</span>
       </div>
+
+      {error && (
+        <div className="px-6 pt-3">
+          <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">{error}</p>
+        </div>
+      )}
 
       <div className="px-6 py-4">
         {/* Filtre */}
