@@ -45,10 +45,11 @@ export default function DashboardPage() {
   ];
 
   const actions = [
-    { href: "/products",     label: "Catalogue produits",   desc: "Consulter et gérer les produits",  icon: "📦", color: "border-indigo-500/30 hover:border-indigo-500" },
-    { href: "/stock/in",     label: "Entrée stock",          desc: "Enregistrer une réception",        icon: "▲",  color: "border-emerald-500/30 hover:border-emerald-500" },
-    { href: "/stock/out",    label: "Sortie stock",          desc: "Enregistrer une expédition",       icon: "▼",  color: "border-red-500/30 hover:border-red-500" },
-    { href: "/stock/log",    label: "Historique opérations", desc: "Consulter tous les mouvements",   icon: "📋", color: "border-slate-500/30 hover:border-slate-500" },
+    { href: "/products",        label: "Catalogue produits",   desc: "Consulter et gérer les produits",   icon: "📦", color: "border-indigo-500/30 hover:border-indigo-500" },
+    { href: "/purchase-orders", label: "BC fournisseurs",      desc: "Réceptions (entrées de stock)",     icon: "📋", color: "border-emerald-500/30 hover:border-emerald-500" },
+    { href: "/commandes",       label: "Commandes clients",    desc: "Livraisons (sorties de stock)",     icon: "🛒", color: "border-blue-500/30 hover:border-blue-500" },
+    { href: "/adjustments",     label: "Ajustements",          desc: "Expiration, casse, pertes",         icon: "⚖️", color: "border-amber-500/30 hover:border-amber-500" },
+    { href: "/stock/log",       label: "Historique opérations", desc: "Consulter tous les mouvements",   icon: "📋", color: "border-slate-500/30 hover:border-slate-500" },
     { href: "/clients",      label: "Clients",               desc: "Pharmacies, paras, particuliers", icon: "👥", color: "border-blue-500/30 hover:border-blue-500" },
     { href: "/fournisseurs", label: "Fournisseurs",          desc: "Gérer vos fournisseurs",          icon: "🏭", color: "border-purple-500/30 hover:border-purple-500" },
   ];

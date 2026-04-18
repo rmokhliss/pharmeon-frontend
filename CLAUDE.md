@@ -47,7 +47,7 @@ app/
       ├─ catalogue/        # Role-aware product catalog
       └─ commandes/        # Order tracking with status timeline
 components/
-  NavBar.tsx, ProductCard.tsx, ProductModal.tsx, StockForm.tsx, Logo.tsx
+  NavBar.tsx, ProductCard.tsx, ProductModal.tsx, Logo.tsx
 lib/
   admin-auth.ts, portail-auth.ts
 ```
