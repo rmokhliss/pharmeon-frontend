@@ -1,15 +1,16 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getPortailUser, portailFetch, clearPortailSession } from "@/lib/portail-auth";
+import Link from "next/link";
+import { getPortailUser, portailFetch, clearPortailSession, savePortailSession, PortailUser } from "@/lib/portail-auth";
 import Logo from "@/components/Logo";
 
-type Product = { id: number; nom: string; reference: string; marque: string; categorie: string; prix_vente: number; unite: string; stock: number; description?: string };
+type Product = { id: number; nom: string; reference: string; marque: string; categorie: string; prix_vente: number; unite: string; stock: number; description?: string; image_url?: string };
 type CartItem = { product: Product; quantite: number };
 
 export default function CataloguePage() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<PortailUser | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState("");
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -18,14 +19,14 @@ export default function CataloguePage() {
   const [sending, setSending] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
+  const [checkoutStep, setCheckoutStep] = useState<"cart" | "register">("cart");
+  const [regForm, setRegForm] = useState({ nom: "", email: "", telephone: "", password: "" });
 
   useEffect(() => {
-    const u = getPortailUser();
-    if (!u) { router.replace("/portail"); return; }
-    setUser(u);
+    setUser(getPortailUser());
     fetch(`/api/products`)
-      .then((r) => r.json()).then(setProducts);
-  }, [router]);
+      .then((r) => r.json()).then(setProducts).catch(() => {});
+  }, []);
 
   const filtered = products.filter((p) =>
     p.stock > 0 && (p.nom.toLowerCase().includes(search.toLowerCase()) || p.marque.toLowerCase().includes(search.toLowerCase()))
@@ -47,41 +48,69 @@ export default function CataloguePage() {
 
   const total = cart.reduce((s, i) => s + i.product.prix_vente * i.quantite, 0);
 
+  const placeOrder = async () => {
+    await portailFetch("/commandes", {
+      method: "POST",
+      body: JSON.stringify({ note: note || undefined, items: cart.map((i) => ({ productId: i.product.id, quantite: i.quantite })) }),
+    });
+    setCart([]); setNote(""); setCartOpen(false); setCheckoutStep("cart");
+    setSuccess("Commande envoyée ! Nous vous confirmons dès que possible.");
+    setTimeout(() => setSuccess(""), 5000);
+  };
+
   const submitOrder = async () => {
+    if (!user) { setCheckoutStep("register"); return; }
+    setSending(true); setError("");
+    try { await placeOrder(); } catch (err: any) { setError(err.message); }
+    finally { setSending(false); }
+  };
+
+  const submitRegisterAndOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
     setSending(true); setError("");
     try {
-      await portailFetch("/commandes", {
+      const res = await fetch("/api/auth/register-public", {
         method: "POST",
-        body: JSON.stringify({ note: note || undefined, items: cart.map((i) => ({ productId: i.product.id, quantite: i.quantite })) }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(regForm),
       });
-      setCart([]); setNote(""); setCartOpen(false);
-      setSuccess("Commande envoyée ! Nous vous confirmons dès que possible.");
-      setTimeout(() => setSuccess(""), 5000);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Impossible de créer le compte");
+      savePortailSession(data.token, data.client);
+      setUser(data.client);
+      await placeOrder();
     } catch (err: any) { setError(err.message); }
     finally { setSending(false); }
   };
 
-  const logout = () => { clearPortailSession(); router.push("/"); };
-
-  if (!user) return null;
+  const logout = () => { clearPortailSession(); setUser(null); };
 
   return (
     <div className="min-h-screen bg-slate-900 text-white pb-24">
       {/* Header */}
       <div className="bg-slate-800 border-b border-slate-700 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
           <Logo size={24} />
           <div>
             <p className="text-white font-semibold text-sm">Pharmeon</p>
-            <p className="text-slate-400 text-xs">Bonjour, {user.nom}</p>
+            <p className="text-slate-400 text-xs">{user ? `Bonjour, ${user.nom}` : "Catalogue public"}</p>
           </div>
-        </div>
+        </Link>
         <div className="flex items-center gap-2">
-          <button onClick={() => router.push("/portail/commandes")}
-            className="text-xs px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300">
-            Mes commandes
-          </button>
-          <button onClick={logout} className="text-xs text-slate-500 hover:text-slate-300">Déconnexion</button>
+          {user ? (
+            <>
+              <button onClick={() => router.push("/portail/commandes")}
+                className="text-xs px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300">
+                Mes commandes
+              </button>
+              <button onClick={logout} className="text-xs text-slate-500 hover:text-slate-300">Déconnexion</button>
+            </>
+          ) : (
+            <Link href="/portail"
+              className="text-xs px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300">
+              Se connecter
+            </Link>
+          )}
         </div>
       </div>
 
@@ -136,41 +165,86 @@ export default function CataloguePage() {
       {/* Cart drawer */}
       {cartOpen && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 px-4 pb-4 sm:pb-0">
-          <div className="bg-slate-800 rounded-2xl w-full max-w-md max-h-[85vh] flex flex-col">
+          <div className="bg-slate-800 rounded-2xl w-full max-w-md max-h-[90vh] flex flex-col">
             <div className="px-5 py-4 border-b border-slate-700 flex items-center justify-between">
-              <h2 className="text-white font-semibold">Mon panier</h2>
-              <button onClick={() => setCartOpen(false)} className="text-slate-400 hover:text-white text-xl leading-none">×</button>
+              <h2 className="text-white font-semibold">
+                {checkoutStep === "register" ? "Vos coordonnées" : "Mon panier"}
+              </h2>
+              <button onClick={() => { setCartOpen(false); setCheckoutStep("cart"); }} className="text-slate-400 hover:text-white text-xl leading-none">×</button>
             </div>
-            <div className="flex-1 overflow-y-auto px-5 py-3 flex flex-col gap-2">
-              {cart.map((item) => (
-                <div key={item.product.id} className="flex items-center gap-3 py-2 border-b border-slate-700 last:border-0">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white text-sm truncate">{item.product.nom}</p>
-                    <p className="text-slate-400 text-xs">{item.product.prix_vente.toFixed(2)} MAD / {item.product.unite}</p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <button onClick={() => updateQty(item.product.id, -1)} className="w-6 h-6 rounded bg-slate-700 text-white text-xs flex items-center justify-center">−</button>
-                    <span className="text-white text-sm w-6 text-center">{item.quantite}</span>
-                    <button onClick={() => updateQty(item.product.id, 1)} className="w-6 h-6 rounded bg-slate-700 text-white text-xs flex items-center justify-center">+</button>
-                  </div>
-                  <p className="text-indigo-300 text-sm w-20 text-right">{(item.product.prix_vente * item.quantite).toFixed(2)}</p>
-                  <button onClick={() => removeFromCart(item.product.id)} className="text-red-400 hover:text-red-300 text-sm">✕</button>
+
+            {checkoutStep === "cart" ? (
+              <>
+                <div className="flex-1 overflow-y-auto px-5 py-3 flex flex-col gap-2">
+                  {cart.map((item) => (
+                    <div key={item.product.id} className="flex items-center gap-3 py-2 border-b border-slate-700 last:border-0">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm truncate">{item.product.nom}</p>
+                        <p className="text-slate-400 text-xs">{item.product.prix_vente.toFixed(2)} MAD / {item.product.unite}</p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => updateQty(item.product.id, -1)} className="w-6 h-6 rounded bg-slate-700 text-white text-xs flex items-center justify-center">−</button>
+                        <span className="text-white text-sm w-6 text-center">{item.quantite}</span>
+                        <button onClick={() => updateQty(item.product.id, 1)} className="w-6 h-6 rounded bg-slate-700 text-white text-xs flex items-center justify-center">+</button>
+                      </div>
+                      <p className="text-indigo-300 text-sm w-20 text-right">{(item.product.prix_vente * item.quantite).toFixed(2)}</p>
+                      <button onClick={() => removeFromCart(item.product.id)} className="text-red-400 hover:text-red-300 text-sm">✕</button>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <div className="px-5 py-4 border-t border-slate-700 flex flex-col gap-3">
-              <input placeholder="Note (optionnel)" value={note} onChange={(e) => setNote(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500" />
-              <div className="flex items-center justify-between">
-                <span className="text-slate-400 text-sm">Total</span>
-                <span className="text-white font-bold">{total.toFixed(2)} MAD</span>
-              </div>
-              {error && <p className="text-red-400 text-xs">{error}</p>}
-              <button onClick={submitOrder} disabled={sending}
-                className="py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm disabled:opacity-50 transition-colors">
-                {sending ? "Envoi en cours..." : "Passer la commande"}
-              </button>
-            </div>
+                <div className="px-5 py-4 border-t border-slate-700 flex flex-col gap-3">
+                  <input placeholder="Note (optionnel)" value={note} onChange={(e) => setNote(e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500" />
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400 text-sm">Total</span>
+                    <span className="text-white font-bold">{total.toFixed(2)} MAD</span>
+                  </div>
+                  {error && <p className="text-red-400 text-xs">{error}</p>}
+                  <button onClick={submitOrder} disabled={sending}
+                    className="py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm disabled:opacity-50 transition-colors">
+                    {sending ? "Envoi en cours..." : user ? "Passer la commande" : "Continuer vers checkout →"}
+                  </button>
+                  {!user && <p className="text-slate-400 text-[11px] text-center">Un compte vous sera créé automatiquement.</p>}
+                </div>
+              </>
+            ) : (
+              <form onSubmit={submitRegisterAndOrder} className="px-5 py-4 flex flex-col gap-3 overflow-y-auto">
+                <p className="text-slate-400 text-xs">Finaliser votre commande — un compte sera créé pour suivre vos commandes.</p>
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">Nom complet *</label>
+                  <input required value={regForm.nom} onChange={(e) => setRegForm((f) => ({ ...f, nom: e.target.value }))}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500" />
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">Email *</label>
+                  <input required type="email" value={regForm.email} onChange={(e) => setRegForm((f) => ({ ...f, email: e.target.value }))}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500" />
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">Téléphone</label>
+                  <input value={regForm.telephone} onChange={(e) => setRegForm((f) => ({ ...f, telephone: e.target.value }))}
+                    placeholder="+212 6..." className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500" />
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">Mot de passe * <span className="text-slate-500">(4 car. min.)</span></label>
+                  <input required type="password" minLength={4} value={regForm.password} onChange={(e) => setRegForm((f) => ({ ...f, password: e.target.value }))}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500" />
+                </div>
+                <div className="flex items-center justify-between pt-1">
+                  <span className="text-slate-400 text-sm">Total</span>
+                  <span className="text-white font-bold">{total.toFixed(2)} MAD</span>
+                </div>
+                {error && <p className="text-red-400 text-xs">{error}</p>}
+                <div className="flex gap-2 pt-1">
+                  <button type="button" onClick={() => setCheckoutStep("cart")}
+                    className="flex-1 py-2.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium">← Retour</button>
+                  <button type="submit" disabled={sending}
+                    className="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold disabled:opacity-50">
+                    {sending ? "..." : "Créer & commander"}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}
