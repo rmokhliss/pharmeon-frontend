@@ -13,16 +13,17 @@ const mainLinks = [
 ];
 
 const moreLinks = [
-  { href: "/clients",      label: "Clients",      icon: "\uD83D\uDC65" },
-  { href: "/fournisseurs", label: "Fournisseurs",  icon: "\uD83C\uDFED" },
-  { href: "/adjustments",  label: "Ajustements",   icon: "\u2696\uFE0F"  },
-  { href: "/analytics",    label: "Analytique",    icon: "\uD83D\uDCCA" },
-  { href: "/stock/log",    label: "Op\u00e9rations",     icon: "\uD83D\uDCCB" },
+  { href: "/clients",        label: "Clients",      icon: "\uD83D\uDC65" },
+  { href: "/fournisseurs",   label: "Fournisseurs",  icon: "\uD83C\uDFED" },
+  { href: "/demandes-acces", label: "Demandes",      icon: "\uD83D\uDCE5" },
+  { href: "/adjustments",    label: "Ajustements",   icon: "\u2696\uFE0F"  },
+  { href: "/analytics",      label: "Analytique",    icon: "\uD83D\uDCCA" },
+  { href: "/stock/log",      label: "Op\u00e9rations",     icon: "\uD83D\uDCCB" },
 ];
 
 const allLinks = [...mainLinks, ...moreLinks];
 
-const ADMIN_PREFIXES = ["/dashboard", "/products", "/stock", "/clients", "/fournisseurs", "/commandes", "/purchase-orders", "/adjustments", "/analytics"];
+const ADMIN_PREFIXES = ["/dashboard", "/products", "/stock", "/clients", "/fournisseurs", "/commandes", "/purchase-orders", "/adjustments", "/analytics", "/demandes-acces"];
 
 export default function NavBar() {
   const path = usePathname();
@@ -30,6 +31,7 @@ export default function NavBar() {
   const [pendingOrders, setPendingOrders] = useState(0);
   const [pendingClients, setPendingClients] = useState(0);
   const [pendingApproval, setPendingApproval] = useState(0);
+  const [pendingDemandes, setPendingDemandes] = useState(0);
 
   const isAdminPath = ADMIN_PREFIXES.some((p) => path === p || path.startsWith(p + "/"));
 
@@ -38,6 +40,7 @@ export default function NavBar() {
     fetch("/api/commandes/pending-count").then((r) => r.json()).then((n) => setPendingOrders(n || 0)).catch(() => {});
     fetch("/api/clients/pending-count").then((r) => r.json()).then((n) => setPendingClients(n || 0)).catch(() => {});
     fetch("/api/clients/pending-approval-count").then((r) => r.json()).then((n) => setPendingApproval(n || 0)).catch(() => {});
+    fetch("/api/demandes/pending-count", { headers: { Authorization: `Bearer ${getAdminToken()}` } }).then((r) => r.json()).then((n) => setPendingDemandes(n || 0)).catch(() => {});
   }, [isAdminPath, path]);
 
   if (!isAdminPath) return null;
@@ -54,6 +57,7 @@ export default function NavBar() {
   const linkLabel = (l: { href: string; label: string; icon: string }) => {
     if (l.href === "/commandes") return <>{l.label}{badge(pendingOrders)}</>;
     if (l.href === "/clients") return <>{l.label}{badge(pendingClients + pendingApproval)}</>;
+    if (l.href === "/demandes-acces") return <>{l.label}{badge(pendingDemandes)}</>;
     return l.label;
   };
 
@@ -118,7 +122,7 @@ export default function NavBar() {
           }`}>
           <span className="text-base relative">
             &bull;&bull;&bull;
-            {(pendingClients + pendingApproval > 0) && (
+            {(pendingClients + pendingApproval + pendingDemandes > 0) && (
               <span className="absolute -top-1 -right-2 w-2 h-2 bg-red-500 rounded-full" />
             )}
           </span>
