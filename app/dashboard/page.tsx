@@ -2,10 +2,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getAdminToken, clearAdminSession } from "@/lib/admin-auth";
+import { getAdminToken, clearAdminSession, adminFetch } from "@/lib/admin-auth";
 import Logo from "@/components/Logo";
-
-const API = "/api";
 
 type Stats = {
   totalProduits: number;
@@ -17,13 +15,14 @@ type Stats = {
 export default function DashboardPage() {
   const router = useRouter();
   const [stats, setStats] = useState<Stats | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!getAdminToken()) { router.replace("/admin/login"); return; }
 
     Promise.all([
-      fetch(`${API}/products`).then((r) => r.json()),
-      fetch(`${API}/stock`).then((r) => r.json()),
+      adminFetch<any[]>("/products"),
+      adminFetch<any[]>("/stock"),
     ]).then(([products, movements]) => {
       const today = new Date().toDateString();
       setStats({
@@ -34,8 +33,8 @@ export default function DashboardPage() {
           (m: any) => new Date(m.createdAt).toDateString() === today
         ).length,
       });
-    });
-  }, []);
+    }).catch((e) => setError(e?.message || "Erreur de chargement"));
+  }, [router]);
 
   const cards = [
     { label: "Produits",          value: stats?.totalProduits, color: "text-indigo-400",  bg: "bg-indigo-500/10",  icon: "📦", href: "/products" },
@@ -73,6 +72,11 @@ export default function DashboardPage() {
       </div>
 
       <div className="px-6 py-5 space-y-6">
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/30 text-red-300 text-sm rounded-lg px-4 py-3">
+            {error}
+          </div>
+        )}
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {cards.map((c) => (
