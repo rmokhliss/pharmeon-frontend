@@ -31,6 +31,8 @@ type ProductLite = {
   stock: number;
 };
 
+type Livreur = { id: number; nom: string; vehicule?: string };
+
 const STATUTS = ["EN_ATTENTE", "VALIDEE", "EN_COURS", "LIVREE", "ANNULEE"];
 
 const STATUT_LABEL: Record<string, string> = {
@@ -55,12 +57,19 @@ export default function CommandesAdminPage() {
   const [addingTo, setAddingTo] = useState<number | null>(null);
   const [productSearch, setProductSearch] = useState("");
   const [products, setProducts] = useState<ProductLite[]>([]);
+  const [livreurs, setLivreurs] = useState<Livreur[]>([]);
+  const [deliverModal, setDeliverModal] = useState<Commande | null>(null);
+  const [delivForm, setDelivForm] = useState({ livreurId: "", delivery_date: "", tracking_number: "" });
 
   const load = useCallback(() => {
     adminFetch<Commande[]>("/commandes").then(setCommandes).catch((e) => setError(e.message));
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    adminFetch<Livreur[]>("/livreurs").then(setLivreurs).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (addingTo === null) return;
@@ -73,13 +82,33 @@ export default function CommandesAdminPage() {
 
   const isEditable = (c: Commande) => c.statut !== "LIVREE" && c.statut !== "ANNULEE";
 
-  const changeStatut = async (id: number, statut: string) => {
+  const changeStatut = async (id: number, statut: string, extra?: { livreurId?: number; delivery_date?: string; tracking_number?: string }) => {
     setUpdating(id); setError("");
     try {
-      await adminFetch(`/commandes/${id}/statut`, { method: "PATCH", body: JSON.stringify({ statut }) });
+      await adminFetch(`/commandes/${id}/statut`, {
+        method: "PATCH",
+        body: JSON.stringify({ statut, ...extra }),
+      });
       load();
     } catch (e: any) { setError(e.message); }
     finally { setUpdating(null); }
+  };
+
+  const openDeliverModal = (c: Commande) => {
+    setDelivForm({ livreurId: "", delivery_date: new Date().toISOString().slice(0, 10), tracking_number: "" });
+    setDeliverModal(c);
+    setError("");
+  };
+
+  const confirmDeliver = async () => {
+    if (!deliverModal) return;
+    const extra: { livreurId?: number; delivery_date?: string; tracking_number?: string } = {};
+    if (delivForm.livreurId) extra.livreurId = Number(delivForm.livreurId);
+    if (delivForm.delivery_date) extra.delivery_date = delivForm.delivery_date;
+    if (delivForm.tracking_number) extra.tracking_number = delivForm.tracking_number;
+    const id = deliverModal.id;
+    setDeliverModal(null);
+    await changeStatut(id, "LIVREE", extra);
   };
 
   const updateQty = async (c: Commande, itemId: number, quantite: number) => {
@@ -266,8 +295,15 @@ export default function CommandesAdminPage() {
                     <p className="text-xs text-slate-400 mb-2">Changer le statut :</p>
                     <div className="flex flex-wrap gap-2">
                       {STATUTS.filter((s) => s !== c.statut).map((s) => (
-                        <button key={s} onClick={() => changeStatut(c.id, s)} disabled={updating === c.id}
-                          className="text-xs px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 disabled:opacity-50 transition-colors">
+                        <button
+                          key={s}
+                          onClick={() => s === "LIVREE" ? openDeliverModal(c) : changeStatut(c.id, s)}
+                          disabled={updating === c.id}
+                          className={`text-xs px-3 py-1.5 rounded-lg disabled:opacity-50 transition-colors ${
+                            s === "LIVREE"
+                              ? "bg-emerald-700/40 hover:bg-emerald-700/70 text-emerald-300"
+                              : "bg-slate-700 hover:bg-slate-600 text-slate-300"
+                          }`}>
                           → {STATUT_LABEL[s]}
                         </button>
                       ))}
@@ -279,6 +315,50 @@ export default function CommandesAdminPage() {
           );
         })}
       </div>
+
+      {deliverModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 px-4 pb-4 sm:pb-0">
+          <div className="bg-slate-800 rounded-2xl w-full max-w-md p-6 flex flex-col gap-4">
+            <div>
+              <h2 className="text-white font-semibold">Marquer comme livrée</h2>
+              <p className="text-slate-400 text-xs mt-0.5">{deliverModal.reference} · {deliverModal.client.nom}</p>
+            </div>
+            <div className="flex flex-col gap-3">
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Livreur</label>
+                <select value={delivForm.livreurId}
+                  onChange={(e) => setDelivForm((f) => ({ ...f, livreurId: e.target.value }))}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500">
+                  <option value="">— Non assigné —</option>
+                  {livreurs.map((l) => (
+                    <option key={l.id} value={l.id}>{l.nom}{l.vehicule ? ` (${l.vehicule})` : ""}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Date de livraison</label>
+                <input type="date" value={delivForm.delivery_date}
+                  onChange={(e) => setDelivForm((f) => ({ ...f, delivery_date: e.target.value }))}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500" />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">N° suivi (optionnel)</label>
+                <input type="text" value={delivForm.tracking_number}
+                  onChange={(e) => setDelivForm((f) => ({ ...f, tracking_number: e.target.value }))}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500" />
+              </div>
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button onClick={() => setDeliverModal(null)}
+                className="flex-1 py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium">Annuler</button>
+              <button onClick={confirmDeliver}
+                className="flex-1 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold">
+                Confirmer livraison
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
