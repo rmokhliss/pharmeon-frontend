@@ -26,6 +26,7 @@ const emptyForm = {
   stock_min: "5",
   description: "",
   image_url: "",
+  audience: "BOTH",
 };
 
 export default function ProductModal({ product, categories, onSave, onClose }: Props) {
@@ -50,6 +51,7 @@ export default function ProductModal({ product, categories, onSave, onClose }: P
         stock_min: String(product.stock_min),
         description: product.description || "",
         image_url: product.image_url || "",
+        audience: product.audience || "BOTH",
       });
     } else {
       setForm(emptyForm);
@@ -81,6 +83,7 @@ export default function ProductModal({ product, categories, onSave, onClose }: P
       stock_min: parseInt(form.stock_min),
       description: form.description || undefined,
       image_url: form.image_url || undefined,
+      audience: form.audience || "BOTH",
     });
   };
 
@@ -167,6 +170,23 @@ export default function ProductModal({ product, categories, onSave, onClose }: P
             </div>
 
             <Field label="Coût réel (cost_price, MAD) — pour l'analyse de marge" value={form.cost_price} onChange={(v) => set("cost_price", v)} type="number" />
+          </section>
+
+          <section className="flex flex-col gap-3 pt-2 border-t border-slate-700">
+            <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider">Audience</p>
+            <div className="grid grid-cols-3 gap-2 p-1 bg-slate-900 rounded-xl">
+              {([
+                { key: "BOTH",   label: "Les deux", desc: "Visible partout" },
+                { key: "PUBLIC", label: "Public",   desc: "Grand public seulement" },
+                { key: "PRO",    label: "Pro",      desc: "Réservé aux pharmacies / paras" },
+              ] as const).map((opt) => (
+                <button key={opt.key} type="button" onClick={() => set("audience", opt.key)}
+                  className={`py-2 rounded-lg text-xs font-medium transition-colors ${form.audience === opt.key ? "bg-indigo-600 text-white" : "text-slate-400 hover:text-white"}`}
+                  title={opt.desc}>
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           </section>
 
           <section className="flex flex-col gap-3 pt-2 border-t border-slate-700">

@@ -22,6 +22,7 @@ export type Product = {
   stock_min: number;
   description?: string;
   image_url?: string;
+  audience?: string;
 };
 
 export default function ProductsPage() {

@@ -54,9 +54,13 @@ export default function HomePage() {
           <span className="text-xl font-bold text-white">Pharmeon</span>
         </div>
         <div className="flex items-center gap-3">
+          <Link href="/portail/catalogue"
+            className="text-sm text-slate-300 hover:text-white transition-colors px-3 py-1.5 rounded-lg hover:bg-slate-800">
+            Catalogue
+          </Link>
           <Link href="/portail"
             className="text-sm text-slate-300 hover:text-white transition-colors px-3 py-1.5 rounded-lg hover:bg-slate-800">
-            Espace Client
+            Se connecter
           </Link>
           <Link href="/admin/login"
             className="text-sm bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-1.5 rounded-lg transition-colors font-medium">
@@ -77,13 +81,13 @@ export default function HomePage() {
           Pharmeon relie les laboratoires aux pharmacies et parapharmacies du Maroc. Catalogue complet, commandes en ligne, livraison fiable.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link href="/portail"
+          <Link href="/portail/catalogue"
             className="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-8 py-3 rounded-xl transition-colors text-sm">
-            Accéder au catalogue →
+            Parcourir le catalogue →
           </Link>
           <a href="#demande"
             className="border border-slate-600 hover:border-slate-500 text-slate-300 hover:text-white font-semibold px-8 py-3 rounded-xl transition-colors text-sm">
-            Devenir client
+            Devenir client pro
           </a>
         </div>
       </section>
@@ -91,12 +95,12 @@ export default function HomePage() {
       {/* Access cards */}
       <section className="px-6 py-12 max-w-2xl mx-auto">
         <div className="grid sm:grid-cols-2 gap-4">
-          <Link href="/portail"
+          <Link href="/portail/catalogue"
             className="bg-indigo-600 hover:bg-indigo-500 transition-colors rounded-2xl p-6 flex items-start gap-4">
             <div className="w-12 h-12 rounded-xl bg-white/15 flex items-center justify-center text-2xl shrink-0">🛒</div>
             <div>
-              <p className="text-white font-semibold text-lg">Espace Client</p>
-              <p className="text-indigo-200 text-sm mt-1">Consultez le catalogue et passez commande en quelques clics</p>
+              <p className="text-white font-semibold text-lg">Catalogue</p>
+              <p className="text-indigo-200 text-sm mt-1">Parcourez les produits sans inscription — commandez en quelques clics</p>
             </div>
           </Link>
           <Link href="/admin/login"

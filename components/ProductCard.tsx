@@ -40,6 +40,13 @@ export default function ProductCard({ product, onEdit, onDelete }: Props) {
         <span className="absolute top-2 right-2 text-[10px] bg-slate-800/90 text-slate-200 px-2 py-0.5 rounded-full font-medium">
           {product.categorie}
         </span>
+        {product.audience && product.audience !== "BOTH" && (
+          <span className={`absolute top-2 left-2 text-[10px] px-2 py-0.5 rounded-full font-medium ${
+            product.audience === "PRO" ? "bg-emerald-500/20 text-emerald-300" : "bg-indigo-500/20 text-indigo-300"
+          }`}>
+            {product.audience === "PRO" ? "Pro" : "Public"}
+          </span>
+        )}
       </div>
 
       <div className="p-4 flex flex-col gap-3">
